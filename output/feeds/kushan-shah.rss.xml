@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Kushan Shah</title><link>http://www.kushanshah.in/</link><description></description><atom:link href="http://www.kushanshah.in/feeds/kushan-shah.rss.xml" rel="self"></atom:link><lastBuildDate>Tue, 28 Oct 2014 00:00:00 +0530</lastBuildDate><item><title>Getting your Google Analytics Data into R</title><link>http://www.kushanshah.in/google-analytics-data-extraction.html</link><description>&lt;p&gt;R is often cited to be the &lt;em&gt;lingua franca&lt;/em&gt; of analysis. While that claim might be held debatable by many folks, R certainly packs in a lot of good implementations in the form of libraries. A simple glance at the &lt;a href="http://cran.r-project.org/web/views/"&gt;CRAN Task Views&lt;/a&gt; will tell you the range of problems you can solve via R. So as a digial analyst, here is the conundrum? One that I have certainly faced&lt;/p&gt;
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Kushan Shah</title><link>http://www.kushanshah.in/</link><description></description><atom:link href="http://www.kushanshah.in/feeds/kushan-shah.rss.xml" rel="self"></atom:link><lastBuildDate>Tue, 28 Oct 2014 00:00:00 +0530</lastBuildDate><item><title>Getting your Google Analytics Data into R</title><link>http://www.kushanshah.in/posts/2014/Oct/google-analytics-data-extraction/</link><description>&lt;p&gt;R is often cited to be the &lt;em&gt;lingua franca&lt;/em&gt; of analysis. While that claim might be held debatable by many folks, R certainly packs in a lot of good implementations in the form of libraries. A simple glance at the &lt;a href="http://cran.r-project.org/web/views/"&gt;CRAN Task Views&lt;/a&gt; will tell you the range of problems you can solve via R. So as a digial analyst, here is the conundrum? One that I have certainly faced&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;R is very powerful in terms of its libraries and statistical capabilities&lt;/li&gt;
 &lt;li&gt;I have extremely good Google Analytics Data&lt;/li&gt;
@@ -27,7 +27,7 @@ Google Analytics Interface?&lt;/p&gt;
 &lt;li&gt;On the Next Screen, set Application Type as &lt;em&gt;Installed Application&lt;/em&gt; and Installed Application Type as &lt;em&gt;Other&lt;/em&gt;&lt;/li&gt;
 &lt;/ol&gt;
 &lt;p&gt;It should look like the screen shown here &lt;/p&gt;
-&lt;p&gt;&lt;img alt="Application Type Selection Dialong" src="/static/images/credentials.png" /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img alt="Application Type Selection Dialong" src="/images/credentials.png" /&gt;&lt;/p&gt;
 &lt;ol&gt;
 &lt;li&gt;Your OAuth 2.0 credentials are now created. Copy the Client ID and the Client Secret to your R Script &lt;/li&gt;
 &lt;/ol&gt;
@@ -95,4 +95,4 @@ dim&lt;span class="o"&gt;(&lt;/span&gt;ga.data&lt;span class="o"&gt;)&lt;/span&g
 &lt;/pre&gt;&lt;/div&gt;
 
 
-&lt;p&gt;In case if you want the entire script, it can be found &lt;a href="https://gist.github.com/shahkushan1/9c61b9f7c46308d13f6e"&gt;here&lt;/a&gt;. In upcoming posts, we will see how to work around Sampling and also discuss some use-cases by marrying the power of Google Analytics and R&lt;/p&gt;</description><dc:creator xmlns:dc="http://purl.org/dc/elements/1.1/">Kushan Shah</dc:creator><pubDate>Tue, 28 Oct 2014 00:00:00 +0530</pubDate><guid>tag:www.kushanshah.in,2014-10-28:google-analytics-data-extraction.html</guid><category>R</category></item></channel></rss>
+&lt;p&gt;In case if you want the entire script, it can be found &lt;a href="https://gist.github.com/shahkushan1/9c61b9f7c46308d13f6e"&gt;here&lt;/a&gt;. In upcoming posts, we will see how to work around Sampling and also discuss some use-cases by marrying the power of Google Analytics and R&lt;/p&gt;</description><dc:creator xmlns:dc="http://purl.org/dc/elements/1.1/">Kushan Shah</dc:creator><pubDate>Tue, 28 Oct 2014 00:00:00 +0530</pubDate><guid>tag:www.kushanshah.in,2014-10-28:posts/2014/Oct/google-analytics-data-extraction/</guid><category>R</category></item></channel></rss>
