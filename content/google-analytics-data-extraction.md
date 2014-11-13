@@ -36,7 +36,7 @@ Before we actually dive into the R script, there is a one time setup required.
 
 It should look like the screen shown here 
 
-![Application Type Selection Dialong](/static/images/credentials.png)
+![Application Type Selection Dialong](/images/credentials.png)
 
 6. Your OAuth 2.0 credentials are now created. Copy the Client ID and the Client Secret to your R Script 
 
@@ -89,7 +89,7 @@ query.list <- Init(start.date = "2014-08-01",
                    metrics = "ga:sessions,ga:transactions",
                    max.results = 10000,
                    sort = "-ga:transactions",
-                   table.id = "ga:7994504")
+                   table.id = "ga:123456")
 
 # Create the Query Builder object so that the query parameters are validated
 ga.query <- QueryBuilder(query.list)
