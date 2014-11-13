@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>Kushan Shah</title><link href="http://www.kushanshah.in/" rel="alternate"></link><link href="http://www.kushanshah.in/feeds/kushan-shah.atom.xml" rel="self"></link><id>http://www.kushanshah.in/</id><updated>2014-10-28T00:00:00+05:30</updated><entry><title>Getting your Google Analytics Data into R</title><link href="http://www.kushanshah.in/google-analytics-data-extraction.html" rel="alternate"></link><updated>2014-10-28T00:00:00+05:30</updated><author><name>Kushan Shah</name></author><id>tag:www.kushanshah.in,2014-10-28:google-analytics-data-extraction.html</id><summary type="html">&lt;p&gt;R is often cited to be the &lt;em&gt;lingua franca&lt;/em&gt; of analysis. While that claim might be held debatable by many folks, R certainly packs in a lot of good implementations in the form of libraries. A simple glance at the &lt;a href="http://cran.r-project.org/web/views/"&gt;CRAN Task Views&lt;/a&gt; will tell you the range of problems you can solve via R. So as a digial analyst, here is the conundrum? One that I have certainly faced&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;R is very powerful in terms of its libraries and statistical capabilities&lt;/li&gt;
+&lt;li&gt;I have extremely good Google Analytics Data&lt;/li&gt;
+&lt;li&gt;I also have business problems that my boss would want to be solved&lt;/li&gt;
+&lt;li&gt;But Google Analytics does not have a native client library for the R language! &lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Not having a client library means a lot of tedious jobs - &lt;strong&gt;Authentication&lt;/strong&gt;, &lt;strong&gt;JSON Parsing&lt;/strong&gt;, &lt;strong&gt;Error handling with the Core Reporting API&lt;/strong&gt; would have to be solved &lt;em&gt;just in order to get the data into R&lt;/em&gt;. For someone who is primarily interested in analyzing data, this low level plumbing work is best left to libraries. This is the problem that RGoogleAnalytics solves. Put simply, RGoogleAnalytics is a wrapper over the Google Analytics API
+(Side Note - It is not the only library which solves this problem. Shout out to &lt;a href="https://twitter.com/skardhamar"&gt;Bror Skardhamar&lt;/a&gt; for his excellent implementation in the form of rga package)&lt;/p&gt;
+&lt;p&gt;But why would you want to use the API to extract your data? What is wrong with just dumping csv files from the
+Google Analytics Interface?&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;The User Interface allows you to only export Standard Reports which means they contain a preset combination of dimensions and metrics. With the API, you can extract an vast combination of dimension/metric combinations. Combine this with the power of R, this opens up new and interesting avenues to explore your data.&lt;/li&gt;
+&lt;li&gt;Oh I almost forgot, you can always create Custom Reports! Yes, but these Custom Reports can contain only 4 dimensions per report. The API has a limit of 7 dimensions per query&lt;/li&gt;
+&lt;li&gt;And wait did I mention Sampling? Better I leave that for another post&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4&gt;Enough with the talk! Show me how to get my data into R&lt;/h4&gt;
+&lt;p&gt;Before we actually dive into the R script, there is a one time setup required. &lt;/p&gt;
+&lt;h3&gt;Getting the OAuth 2.0 credentials&lt;/h3&gt;
+&lt;ol&gt;
+&lt;li&gt;Head over to &lt;a href="http://console.developers.google.com"&gt;Google Developers Console&lt;/a&gt; &lt;/li&gt;
+&lt;li&gt;Create a New Project&lt;/li&gt;
+&lt;li&gt;Once created, navigate to APIs and enable the Analytics API for your project&lt;/li&gt;
+&lt;li&gt;Navigate to Credentials and create a New Client ID&lt;/li&gt;
+&lt;li&gt;The wizard will ask you to add a Product Name and set your email address&lt;/li&gt;
+&lt;li&gt;On the Next Screen, set Application Type as &lt;em&gt;Installed Application&lt;/em&gt; and Installed Application Type as &lt;em&gt;Other&lt;/em&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;It should look like the screen shown here &lt;/p&gt;
+&lt;p&gt;&lt;img alt="Application Type Selection Dialong" src="/static/images/credentials.png" /&gt;&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Your OAuth 2.0 credentials are now created. Copy the Client ID and the Client Secret to your R Script &lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Note that the OAuth Credentials are unique to your account and best practices dictate that they not be shared with others or exposed in public scripts&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;require&lt;span class="o"&gt;(&lt;/span&gt;RGoogleAnalytics&lt;span class="o"&gt;)&lt;/span&gt;
+
+&lt;span class="c"&gt;# Authorize the Google Analytics account&lt;/span&gt;
+&lt;span class="c"&gt;# This need not be executed in every session once the token object is created &lt;/span&gt;
+&lt;span class="c"&gt;# and saved&lt;/span&gt;
+client.id &amp;lt;- &lt;span class="s2"&gt;&amp;quot;xxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com&amp;quot;&lt;/span&gt;
+client.secret &amp;lt;- &lt;span class="s2"&gt;&amp;quot;xxxxxxxxxxxxxxxd_TknUI&amp;quot;&lt;/span&gt;
+token &amp;lt;- Auth&lt;span class="o"&gt;(&lt;/span&gt;client.id,client.secret&lt;span class="o"&gt;)&lt;/span&gt;
+
+&lt;span class="c"&gt;# Save the token object for future sessions&lt;/span&gt;
+save&lt;span class="o"&gt;(&lt;/span&gt;token,file&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;./token_file&amp;quot;&lt;/span&gt;&lt;span class="o"&gt;)&lt;/span&gt;
+
+&lt;span class="c"&gt;# In future sessions it can be loaded via &lt;/span&gt;
+load&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;./token_file&amp;quot;&lt;/span&gt;&lt;span class="o"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;&lt;em&gt;What did we just do? What the heck is OAuth anyway?&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Think of OAuth this way - We will be using R to extract data from a particular Google Analytics Account&lt;/p&gt;
+&lt;p&gt;We will be using R to extract data from Google's Servers via the Google Analytics API. Each request to the API has to be authenticated via an Access Token. Your OAuth Credentials &lt;strong&gt;(Client ID + Client Secret)&lt;/strong&gt; are used to retrieve this Access Token. Access Tokens have a lifetime of 60 minutes after which they need to be
+regenerated. But we will get to that.&lt;/p&gt;
+&lt;p&gt;The next step is to get the Profile ID/View ID of the Google Analytics profile for which the data extraction is to be carried out. It can be found within the Admin Panel of the Google Analytics UI. This profile ID maps to the &lt;em&gt;table.id&lt;/em&gt; argument below. The rest of the query parameters are pretty much standard. Having said that, keep the following points handy&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Dimensions and Metrics Names are a bit different from the ones you see normally in the UI. The complete list of valid names can be found at &lt;a href="https://developers.google.com/analytics/devguides/reporting/core/dimsmets"&gt;this&lt;/a&gt; link&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Dimensions and Metric names use (Camel Case)[http://en.wikipedia.org/wiki/CamelCase] e.g. ga:sourceMedium&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;A better workaround to remembering these minute things is to test your queries using the &lt;a href="http://ga-dev-tools.appspot.com/explorer/"&gt;Query Feed Explorer&lt;/a&gt;. Once your query runs successfully, you can quickly copy the parameters to your R Script saving you from a lot of legwork. &lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Here is the remainder of the script which gets you the requested data into a dataframe.&lt;/p&gt;
+&lt;h3&gt;Extraction&lt;/h3&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;# Build a list of all the Query Parameters&lt;/span&gt;
+
+&lt;span class="c"&gt;# Get the Sessions &amp;amp; Transactions for each Source/Medium sorted in &lt;/span&gt;
+&lt;span class="c"&gt;# descending order by the Transactions&lt;/span&gt;
+
+query.list &amp;lt;- Init&lt;span class="o"&gt;(&lt;/span&gt;start.date &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;2014-08-01&amp;quot;&lt;/span&gt;,
+                   end.date &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;2014-09-01&amp;quot;&lt;/span&gt;,
+                   &lt;span class="nv"&gt;dimensions&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;ga:sourceMedium&amp;quot;&lt;/span&gt;,
+                   &lt;span class="nv"&gt;metrics&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;ga:sessions,ga:transactions&amp;quot;&lt;/span&gt;,
+                   max.results &lt;span class="o"&gt;=&lt;/span&gt; 10000,
+                   &lt;span class="nv"&gt;sort&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;-ga:transactions&amp;quot;&lt;/span&gt;,
+                   table.id &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;ga:7994504&amp;quot;&lt;/span&gt;&lt;span class="o"&gt;)&lt;/span&gt;
+
+&lt;span class="c"&gt;# Create the Query Builder object so that the query parameters are validated&lt;/span&gt;
+ga.query &amp;lt;- QueryBuilder&lt;span class="o"&gt;(&lt;/span&gt;query.list&lt;span class="o"&gt;)&lt;/span&gt;
+
+&lt;span class="c"&gt;# Extract the data and store it in a data-frame&lt;/span&gt;
+ga.data &amp;lt;- GetReportData&lt;span class="o"&gt;(&lt;/span&gt;ga.query, token&lt;span class="o"&gt;)&lt;/span&gt;
+
+&lt;span class="c"&gt;# Sanity Check&lt;/span&gt;
+summary&lt;span class="o"&gt;(&lt;/span&gt;ga.data&lt;span class="o"&gt;)&lt;/span&gt;
+dim&lt;span class="o"&gt;(&lt;/span&gt;ga.data&lt;span class="o"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Coming back to the point about Access Tokens, since they expire after 60 minutes. How do we ensure whether the current Access Token is valid or it needs to be regenerated? This functionality is wrapped within &lt;em&gt;ValidateToken()&lt;/em&gt; It validates the token and regenerates a fresh version if it has expired. Here's how to use it in practice&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;ValidateToken&lt;span class="o"&gt;(&lt;/span&gt;token&lt;span class="o"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;In case if you want the entire script, it can be found &lt;a href="https://gist.github.com/shahkushan1/9c61b9f7c46308d13f6e"&gt;here&lt;/a&gt;. In upcoming posts, we will see how to work around Sampling and also discuss some use-cases by marrying the power of Google Analytics and R&lt;/p&gt;</summary><category term="R"></category></entry></feed>

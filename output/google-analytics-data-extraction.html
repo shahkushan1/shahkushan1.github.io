@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- ## for client-side less
+  <link rel="stylesheet/less" type="text/css" href="http://www.kushanshah.in/theme/css/style.less">
+  <script src="http://cdnjs.cloudflare.com/ajax/libs/less.js/1.7.3/less.min.js" type="text/javascript"></script>
+  -->
+  <link rel="stylesheet" type="text/css" href="http://www.kushanshah.in/theme/css/style.css">
+  <link rel="stylesheet" type="text/css" href="http://www.kushanshah.in/theme/css/pygments.css">
+  <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=PT+Sans|PT+Serif|PT+Mono">
+
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="author" content="Kushan Shah">
+  <meta name="description" content="Posts and writings by Kushan Shah">
+
+
+<meta name="keywords" content="R">
+
+  <title>
+    Kushan Shah
+&ndash; Getting your Google Analytics Data into R  </title>
+
+</head>
+
+<body>
+  <aside>
+    <div id="user_meta">
+      <a href="http://www.kushanshah.in">
+        <img src="http://www.kushanshah.in/static/images/kushan.png" alt="logo">
+      </a>
+      <h2><a href="http://www.kushanshah.in">Kushan Shah</a></h2>
+      <p></p>
+      <ul>
+        <li><a href="http://www.kushanshah.in/pages/about.html">About Me</a></li>
+        <li><a href="https://github.com/shahkushan1" target="_blank">Github</a></li>
+        <li><a href="http://in.linkedin.com/in/kushanshah" target="_blank">LinkedIn</a></li>
+      </ul>
+    </div>
+  </aside>
+
+  <main>
+    <header>
+      <p>
+      <a href="http://www.kushanshah.in">Index</a> &brvbar; <a href="http://www.kushanshah.in/archives.html">Archives</a>
+      </p>
+    </header>
+
+<article>
+  <div class="article_title">
+    <h3><a href="http://www.kushanshah.in/google-analytics-data-extraction.html">Getting your Google Analytics Data into R</a></h3>
+  </div>
+  <div class="article_text">
+    <p>R is often cited to be the <em>lingua franca</em> of analysis. While that claim might be held debatable by many folks, R certainly packs in a lot of good implementations in the form of libraries. A simple glance at the <a href="http://cran.r-project.org/web/views/">CRAN Task Views</a> will tell you the range of problems you can solve via R. So as a digial analyst, here is the conundrum? One that I have certainly faced</p>
+<ul>
+<li>R is very powerful in terms of its libraries and statistical capabilities</li>
+<li>I have extremely good Google Analytics Data</li>
+<li>I also have business problems that my boss would want to be solved</li>
+<li>But Google Analytics does not have a native client library for the R language! </li>
+</ul>
+<p>Not having a client library means a lot of tedious jobs - <strong>Authentication</strong>, <strong>JSON Parsing</strong>, <strong>Error handling with the Core Reporting API</strong> would have to be solved <em>just in order to get the data into R</em>. For someone who is primarily interested in analyzing data, this low level plumbing work is best left to libraries. This is the problem that RGoogleAnalytics solves. Put simply, RGoogleAnalytics is a wrapper over the Google Analytics API
+(Side Note - It is not the only library which solves this problem. Shout out to <a href="https://twitter.com/skardhamar">Bror Skardhamar</a> for his excellent implementation in the form of rga package)</p>
+<p>But why would you want to use the API to extract your data? What is wrong with just dumping csv files from the
+Google Analytics Interface?</p>
+<ul>
+<li>The User Interface allows you to only export Standard Reports which means they contain a preset combination of dimensions and metrics. With the API, you can extract an vast combination of dimension/metric combinations. Combine this with the power of R, this opens up new and interesting avenues to explore your data.</li>
+<li>Oh I almost forgot, you can always create Custom Reports! Yes, but these Custom Reports can contain only 4 dimensions per report. The API has a limit of 7 dimensions per query</li>
+<li>And wait did I mention Sampling? Better I leave that for another post</li>
+</ul>
+<h4>Enough with the talk! Show me how to get my data into R</h4>
+<p>Before we actually dive into the R script, there is a one time setup required. </p>
+<h3>Getting the OAuth 2.0 credentials</h3>
+<ol>
+<li>Head over to <a href="http://console.developers.google.com">Google Developers Console</a> </li>
+<li>Create a New Project</li>
+<li>Once created, navigate to APIs and enable the Analytics API for your project</li>
+<li>Navigate to Credentials and create a New Client ID</li>
+<li>The wizard will ask you to add a Product Name and set your email address</li>
+<li>On the Next Screen, set Application Type as <em>Installed Application</em> and Installed Application Type as <em>Other</em></li>
+</ol>
+<p>It should look like the screen shown here </p>
+<p><img alt="Application Type Selection Dialong" src="/static/images/credentials.png" /></p>
+<ol>
+<li>Your OAuth 2.0 credentials are now created. Copy the Client ID and the Client Secret to your R Script </li>
+</ol>
+<p>Note that the OAuth Credentials are unique to your account and best practices dictate that they not be shared with others or exposed in public scripts</p>
+<div class="highlight"><pre>require<span class="o">(</span>RGoogleAnalytics<span class="o">)</span>
+
+<span class="c"># Authorize the Google Analytics account</span>
+<span class="c"># This need not be executed in every session once the token object is created </span>
+<span class="c"># and saved</span>
+client.id &lt;- <span class="s2">&quot;xxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com&quot;</span>
+client.secret &lt;- <span class="s2">&quot;xxxxxxxxxxxxxxxd_TknUI&quot;</span>
+token &lt;- Auth<span class="o">(</span>client.id,client.secret<span class="o">)</span>
+
+<span class="c"># Save the token object for future sessions</span>
+save<span class="o">(</span>token,file<span class="o">=</span><span class="s2">&quot;./token_file&quot;</span><span class="o">)</span>
+
+<span class="c"># In future sessions it can be loaded via </span>
+load<span class="o">(</span><span class="s2">&quot;./token_file&quot;</span><span class="o">)</span>
+</pre></div>
+
+
+<p><em>What did we just do? What the heck is OAuth anyway?</em></p>
+<p>Think of OAuth this way - We will be using R to extract data from a particular Google Analytics Account</p>
+<p>We will be using R to extract data from Google's Servers via the Google Analytics API. Each request to the API has to be authenticated via an Access Token. Your OAuth Credentials <strong>(Client ID + Client Secret)</strong> are used to retrieve this Access Token. Access Tokens have a lifetime of 60 minutes after which they need to be
+regenerated. But we will get to that.</p>
+<p>The next step is to get the Profile ID/View ID of the Google Analytics profile for which the data extraction is to be carried out. It can be found within the Admin Panel of the Google Analytics UI. This profile ID maps to the <em>table.id</em> argument below. The rest of the query parameters are pretty much standard. Having said that, keep the following points handy</p>
+<ul>
+<li>Dimensions and Metrics Names are a bit different from the ones you see normally in the UI. The complete list of valid names can be found at <a href="https://developers.google.com/analytics/devguides/reporting/core/dimsmets">this</a> link</li>
+<li>
+<p>Dimensions and Metric names use (Camel Case)[http://en.wikipedia.org/wiki/CamelCase] e.g. ga:sourceMedium</p>
+</li>
+<li>
+<p>A better workaround to remembering these minute things is to test your queries using the <a href="http://ga-dev-tools.appspot.com/explorer/">Query Feed Explorer</a>. Once your query runs successfully, you can quickly copy the parameters to your R Script saving you from a lot of legwork. </p>
+</li>
+</ul>
+<p>Here is the remainder of the script which gets you the requested data into a dataframe.</p>
+<h3>Extraction</h3>
+<div class="highlight"><pre><span class="c"># Build a list of all the Query Parameters</span>
+
+<span class="c"># Get the Sessions &amp; Transactions for each Source/Medium sorted in </span>
+<span class="c"># descending order by the Transactions</span>
+
+query.list &lt;- Init<span class="o">(</span>start.date <span class="o">=</span> <span class="s2">&quot;2014-08-01&quot;</span>,
+                   end.date <span class="o">=</span> <span class="s2">&quot;2014-09-01&quot;</span>,
+                   <span class="nv">dimensions</span> <span class="o">=</span> <span class="s2">&quot;ga:sourceMedium&quot;</span>,
+                   <span class="nv">metrics</span> <span class="o">=</span> <span class="s2">&quot;ga:sessions,ga:transactions&quot;</span>,
+                   max.results <span class="o">=</span> 10000,
+                   <span class="nv">sort</span> <span class="o">=</span> <span class="s2">&quot;-ga:transactions&quot;</span>,
+                   table.id <span class="o">=</span> <span class="s2">&quot;ga:7994504&quot;</span><span class="o">)</span>
+
+<span class="c"># Create the Query Builder object so that the query parameters are validated</span>
+ga.query &lt;- QueryBuilder<span class="o">(</span>query.list<span class="o">)</span>
+
+<span class="c"># Extract the data and store it in a data-frame</span>
+ga.data &lt;- GetReportData<span class="o">(</span>ga.query, token<span class="o">)</span>
+
+<span class="c"># Sanity Check</span>
+summary<span class="o">(</span>ga.data<span class="o">)</span>
+dim<span class="o">(</span>ga.data<span class="o">)</span>
+</pre></div>
+
+
+<p>Coming back to the point about Access Tokens, since they expire after 60 minutes. How do we ensure whether the current Access Token is valid or it needs to be regenerated? This functionality is wrapped within <em>ValidateToken()</em> It validates the token and regenerates a fresh version if it has expired. Here's how to use it in practice</p>
+<div class="highlight"><pre>ValidateToken<span class="o">(</span>token<span class="o">)</span>
+</pre></div>
+
+
+<p>In case if you want the entire script, it can be found <a href="https://gist.github.com/shahkushan1/9c61b9f7c46308d13f6e">here</a>. In upcoming posts, we will see how to work around Sampling and also discuss some use-cases by marrying the power of Google Analytics and R</p>
+  </div>
+  <div class="article_meta">
+    <p>Posted on: Tue 28 October 2014</p>
+    <p>Category: <a href="http://www.kushanshah.in/category/misc.html">misc</a>
+ &ndash; Tags:
+      <a href="http://www.kushanshah.in/tag/r.html">R</a>    </p>
+  </div>
+
+
+</article>
+
+
+    <div id="ending_message">
+      <p>&copy; Kushan Shah. Built using <a href="http://getpelican.com" target="_blank">Pelican</a>. Theme by Giulio Fidente on <a href="https://github.com/gfidente/pelican-svbhack" target="_blank">github</a>. .</p>
+    </div>
+  </main>
+</body>
+</html>
