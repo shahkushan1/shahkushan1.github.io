@@ -1,5 +1,61 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>Kushan Shah</title><link href="http://www.kushanshah.in/" rel="alternate"></link><link href="http://www.kushanshah.in/feeds/kushan-shah.atom.xml" rel="self"></link><id>http://www.kushanshah.in/</id><updated>2014-10-28T00:00:00+05:30</updated><entry><title>Getting your Google Analytics Data into R</title><link href="http://www.kushanshah.in/posts/2014/Oct/google-analytics-data-extraction/" rel="alternate"></link><updated>2014-10-28T00:00:00+05:30</updated><author><name>Kushan Shah</name></author><id>tag:www.kushanshah.in,2014-10-28:posts/2014/Oct/google-analytics-data-extraction/</id><summary type="html">&lt;p&gt;R is often cited to be the &lt;em&gt;lingua franca&lt;/em&gt; of analysis. While that claim might be held debatable by many folks, R certainly packs in a lot of good implementations in the form of libraries. A simple glance at the &lt;a href="http://cran.r-project.org/web/views/"&gt;CRAN Task Views&lt;/a&gt; will tell you the range of problems you can solve via R. So as a digial analyst, here is the conundrum? One that I have certainly faced&lt;/p&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>Kushan Shah</title><link href="http://www.kushanshah.in/" rel="alternate"></link><link href="http://www.kushanshah.in/feeds/kushan-shah.atom.xml" rel="self"></link><id>http://www.kushanshah.in/</id><updated>2014-11-01T00:00:00+05:30</updated><entry><title>High Volume JSON Parsing using Python and/or Bash</title><link href="http://www.kushanshah.in/posts/2014/Nov/high-volume-json-parsing-python-bash/" rel="alternate"></link><updated>2014-11-01T00:00:00+05:30</updated><author><name>Kushan Shah</name></author><id>tag:www.kushanshah.in,2014-11-01:posts/2014/Nov/high-volume-json-parsing-python-bash/</id><summary type="html">&lt;h1&gt;The Problem&lt;/h1&gt;
+&lt;p&gt;Your friend gives you a 1.2 gb &lt;a href="https://www.dropbox.com/s/wc32q81gxkc8umr/sample_tweets_data.json?dl=0"&gt;JSON Dump of the Twitter Streaming API&lt;/a&gt; and asks you to parse it to find occurrences of Youtube URL patterns e.g. &lt;em&gt;youtube.com/&lt;/em&gt; and &lt;em&gt;youtu.be/&lt;/em&gt; in it.&lt;/p&gt;
+&lt;p&gt;TL;DR If you're interested in a one line solution scroll down to the end of this blog post.&lt;/p&gt;
+&lt;h1&gt;The Solution&lt;/h1&gt;
+&lt;p&gt;This describes the train of events going through my mind.Be aware that I was doing this for the first time.&lt;/p&gt;
+&lt;p&gt;Naturally, the &lt;em&gt;json.load&lt;/em&gt; function led to a memory error. Well, a 1.2 gb file was certainly large for a system with 4 gb memory but I thought I could easily load it into MongoDB and then query it for the url pattern. So I quickly tried to import the json file into MongoDB &lt;/p&gt;
+&lt;p&gt;&lt;code&gt;mongoimport --db test --collection twitter_dump --type json --file sample_tweets_data.json&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;and it resulted into -&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;exception:read error, or input line too long (max length: 16777216)&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;I also tried appending the &lt;em&gt;jsonArray&lt;/em&gt; switch with the thought that MongoDB would accept multiple documents in a single JSON array&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;mongoimport --db test --collection twitter_dump --type json --file sample_tweets_data.json --jsonArray&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;exception:JSONArray file too large&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;I thus came to the conclusion that in memory parsing wasn't the way to go. Moreover, since I was only interested in getting the URLs there was no point storing the data into a database. After some google-fu, I came to know about a streaming SAX like Parser for JSON. Aptly called &lt;em&gt;yajl&lt;/em&gt; &lt;a href="https://github.com/lloyd/yajl"&gt;Yet Another JSON Library&lt;/a&gt; I was able to use this and its Python bindings &lt;a href="http://pykler.github.io/yajl-py/"&gt;yajl-py&lt;/a&gt; to great effect.&lt;/p&gt;
+&lt;p&gt;For those who are familiar with the Event driven programming paradigm, you might want to skip the below explanation and jump directly to the code - &lt;/p&gt;
+&lt;p&gt;A JSON tree contains the following objects - &lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;{ - Start Map&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;} - End Map&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;[ - Start Array&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;] - End Array&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;keys&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;allowable Values - Null, Integer, Double &amp;amp; String&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;YAJL contains a core event loop that iterates over the given JSON file. It generates events on hitting each of the above object types. We define custom callback routines that are hit whenever an event is generated. These routines are responsible for extracting the objects of our interest. If all that sounds Greek to you here's a more simplified explanation - &lt;/p&gt;
+&lt;p&gt;Since we are interested in finding out all the Youtube URLs in the JSON document, we define a callback routine that is fired on every string value and checks whether the string matches a regex. &lt;/p&gt;
+&lt;p&gt;The code is available in &lt;a href="https://github.com/shahkushan1/tweet_parser"&gt;this&lt;/a&gt; repository. Besides JSON parsing, YAJL is feature rich and its streaming implementation makes it useful for other things as well - JSON Reformattng, JSON Validation. It's source has detailed &lt;a href="https://github.com/pykler/yajl-py/tree/master/examples/"&gt;examples&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;I later discovered that besides writing a Python script to accomplish this task, I could have tried these options as well - &lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a href="http://stedolan.github.io/jq/"&gt;&lt;strong&gt;jq&lt;/strong&gt;&lt;/a&gt; - A Commandline JSON Parser written in C&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;grep -Po 'http[s]:\/\/www\.youtube\.com/watch\?v\=.{11}|https:\/\/youtu.be\/.{11}' sample_tweets_data.json&lt;/code&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;As a quick performance check I compared the time taken by my Python script (which used yajl) vs the &lt;em&gt;grep&lt;/em&gt; command. &lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;em&gt;grep&lt;/em&gt; - 1 minute 55 seconds&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Python - 3 minutes 1 seconds &lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;It was clear that &lt;em&gt;grep&lt;/em&gt; was the winner here in terms of speed. But I did learn a whole bunch of new tools and a practical use of the Event Driven Programming paradigm while attempting to solve this problem. What are your favorite techniques for JSON Parsing? Do you optimize for speed, code maintainability or quick solutions?&lt;/p&gt;</summary><category term="Python"></category><category term="Bash"></category></entry><entry><title>Getting your Google Analytics Data into R</title><link href="http://www.kushanshah.in/posts/2014/Oct/google-analytics-data-extraction/" rel="alternate"></link><updated>2014-10-28T00:00:00+05:30</updated><author><name>Kushan Shah</name></author><id>tag:www.kushanshah.in,2014-10-28:posts/2014/Oct/google-analytics-data-extraction/</id><summary type="html">&lt;p&gt;R is often cited to be the &lt;em&gt;lingua franca&lt;/em&gt; of analysis. While that claim might be held debatable by many folks, R certainly packs in a lot of good implementations in the form of libraries. A simple glance at the &lt;a href="http://cran.r-project.org/web/views/"&gt;CRAN Task Views&lt;/a&gt; will tell you the range of problems you can solve via R. So as a digial analyst, here is the conundrum? One that I have certainly faced&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;R is very powerful in terms of its libraries and statistical capabilities&lt;/li&gt;
 &lt;li&gt;I have extremely good Google Analytics Data&lt;/li&gt;
@@ -76,7 +132,7 @@ query.list &amp;lt;- Init&lt;span class="o"&gt;(&lt;/span&gt;start.date &lt;span
                    &lt;span class="nv"&gt;metrics&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;ga:sessions,ga:transactions&amp;quot;&lt;/span&gt;,
                    max.results &lt;span class="o"&gt;=&lt;/span&gt; 10000,
                    &lt;span class="nv"&gt;sort&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;-ga:transactions&amp;quot;&lt;/span&gt;,
-                   table.id &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;ga:7994504&amp;quot;&lt;/span&gt;&lt;span class="o"&gt;)&lt;/span&gt;
+                   table.id &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;ga:123456&amp;quot;&lt;/span&gt;&lt;span class="o"&gt;)&lt;/span&gt;
 
 &lt;span class="c"&gt;# Create the Query Builder object so that the query parameters are validated&lt;/span&gt;
 ga.query &amp;lt;- QueryBuilder&lt;span class="o"&gt;(&lt;/span&gt;query.list&lt;span class="o"&gt;)&lt;/span&gt;

@@ -3,11 +3,11 @@
 
 <head>
   <!-- ## for client-side less
-  <link rel="stylesheet/less" type="text/css" href="../../../../theme/css/style.less">
+  <link rel="stylesheet/less" type="text/css" href="http://www.kushanshah.in/theme/css/style.less">
   <script src="http://cdnjs.cloudflare.com/ajax/libs/less.js/1.7.3/less.min.js" type="text/javascript"></script>
   -->
-  <link rel="stylesheet" type="text/css" href="../../../../theme/css/style.css">
-  <link rel="stylesheet" type="text/css" href="../../../../theme/css/pygments.css">
+  <link rel="stylesheet" type="text/css" href="http://www.kushanshah.in/theme/css/style.css">
+  <link rel="stylesheet" type="text/css" href="http://www.kushanshah.in/theme/css/pygments.css">
   <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=PT+Sans|PT+Serif|PT+Mono">
 
   <meta charset="utf-8" />
@@ -15,7 +15,6 @@
   <meta name="author" content="Kushan Shah">
   <meta name="description" content="Posts and writings by Kushan Shah">
 
-  <link href="http://www.kushanshah.in/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="Kushan Shah Atom" />
 
 <meta name="keywords" content="R">
 
@@ -28,13 +27,13 @@
 <body>
   <aside>
     <div id="user_meta">
-      <a href="../../../..">
+      <a href="http://www.kushanshah.in">
         <img src="http://www.kushanshah.in/images/kushan.png" alt="logo">
       </a>
-      <h2><a href="../../../..">Kushan Shah</a></h2>
+      <h2><a href="http://www.kushanshah.in">Kushan Shah</a></h2>
       <p></p>
       <ul>
-        <li><a href="../../../../pages/about/">About Me</a></li>
+        <li><a href="http://www.kushanshah.in/pages/about/">About Me</a></li>
         <li><a href="https://github.com/shahkushan1" target="_blank">Github</a></li>
         <li><a href="http://in.linkedin.com/in/kushanshah" target="_blank">LinkedIn</a></li>
       </ul>
@@ -44,14 +43,13 @@
   <main>
     <header>
       <p>
-      <a href="../../../..">Index</a> &brvbar; <a href="../../../../archives.html">Archives</a>
-      &brvbar; <a href="http://www.kushanshah.in/feeds/all.atom.xml">Atom</a>
+      <a href="http://www.kushanshah.in">Index</a> &brvbar; <a href="http://www.kushanshah.in/archives.html">Archives</a>
       </p>
     </header>
 
 <article>
   <div class="article_title">
-    <h3><a href="../../../../posts/2014/Oct/google-analytics-data-extraction/">Getting your Google Analytics Data into R</a></h3>
+    <h3><a href="http://www.kushanshah.in/posts/2014/Oct/google-analytics-data-extraction/">Getting your Google Analytics Data into R</a></h3>
   </div>
   <div class="article_text">
     <p>R is often cited to be the <em>lingua franca</em> of analysis. While that claim might be held debatable by many folks, R certainly packs in a lot of good implementations in the form of libraries. A simple glance at the <a href="http://cran.r-project.org/web/views/">CRAN Task Views</a> will tell you the range of problems you can solve via R. So as a digial analyst, here is the conundrum? One that I have certainly faced</p>
@@ -131,7 +129,7 @@ query.list &lt;- Init<span class="o">(</span>start.date <span class="o">=</span>
                    <span class="nv">metrics</span> <span class="o">=</span> <span class="s2">&quot;ga:sessions,ga:transactions&quot;</span>,
                    max.results <span class="o">=</span> 10000,
                    <span class="nv">sort</span> <span class="o">=</span> <span class="s2">&quot;-ga:transactions&quot;</span>,
-                   table.id <span class="o">=</span> <span class="s2">&quot;ga:7994504&quot;</span><span class="o">)</span>
+                   table.id <span class="o">=</span> <span class="s2">&quot;ga:123456&quot;</span><span class="o">)</span>
 
 <span class="c"># Create the Query Builder object so that the query parameters are validated</span>
 ga.query &lt;- QueryBuilder<span class="o">(</span>query.list<span class="o">)</span>
@@ -154,9 +152,9 @@ dim<span class="o">(</span>ga.data<span class="o">)</span>
   </div>
   <div class="article_meta">
     <p>Posted on: Tue 28 October 2014</p>
-    <p>Category: <a href="../../../../category/misc.html">misc</a>
+    <p>Category: <a href="http://www.kushanshah.in/category/misc.html">misc</a>
  &ndash; Tags:
-      <a href="../../../../tag/r.html">R</a>    </p>
+      <a href="http://www.kushanshah.in/tag/r.html">R</a>    </p>
   </div>
 
 
