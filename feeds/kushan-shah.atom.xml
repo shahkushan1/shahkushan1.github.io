@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>Kushan Shah</title><link href="http://www.kushanshah.in/" rel="alternate"></link><link href="http://www.kushanshah.in/feeds/kushan-shah.atom.xml" rel="self"></link><id>http://www.kushanshah.in/</id><updated>2014-11-01T00:00:00+05:30</updated><entry><title>High Volume JSON Parsing using Python and/or Bash</title><link href="http://www.kushanshah.in/posts/2014/Nov/high-volume-json-parsing-python-bash/" rel="alternate"></link><updated>2014-11-01T00:00:00+05:30</updated><author><name>Kushan Shah</name></author><id>tag:www.kushanshah.in,2014-11-01:posts/2014/Nov/high-volume-json-parsing-python-bash/</id><summary type="html">&lt;h1&gt;The Problem&lt;/h1&gt;
+&lt;p&gt;Your friend gives you a 1.2 gb &lt;a href="https://www.dropbox.com/s/wc32q81gxkc8umr/sample_tweets_data.json?dl=0"&gt;JSON Dump of the Twitter Streaming API&lt;/a&gt; and asks you to parse it to find occurrences of Youtube URL patterns e.g. &lt;em&gt;youtube.com/&lt;/em&gt; and &lt;em&gt;youtu.be/&lt;/em&gt; in it.&lt;/p&gt;
+&lt;p&gt;TL;DR If you're interested in a one line solution scroll down to the end of this blog post.&lt;/p&gt;
+&lt;h1&gt;The Solution&lt;/h1&gt;
+&lt;p&gt;This describes the train of events going through my mind.Be aware that I was doing this for the first time.&lt;/p&gt;
+&lt;p&gt;Naturally, the &lt;em&gt;json.load&lt;/em&gt; function led to a memory error. Well, a 1.2 gb file was certainly large for a system with 4 gb memory but I thought I could easily load it into MongoDB and then query it for the url pattern. So I quickly tried to import the json file into MongoDB &lt;/p&gt;
+&lt;p&gt;&lt;code&gt;mongoimport --db test --collection twitter_dump --type json --file sample_tweets_data.json&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;and it resulted into -&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;exception:read error, or input line too long (max length: 16777216)&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;I also tried appending the &lt;em&gt;jsonArray&lt;/em&gt; switch with the thought that MongoDB would accept multiple documents in a single JSON array&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;mongoimport --db test --collection twitter_dump --type json --file sample_tweets_data.json --jsonArray&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;exception:JSONArray file too large&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;I thus came to the conclusion that in memory parsing wasn't the way to go. Moreover, since I was only interested in getting the URLs there was no point storing the data into a database. After some google-fu, I came to know about a streaming SAX like Parser for JSON. Aptly called &lt;em&gt;yajl&lt;/em&gt; &lt;a href="https://github.com/lloyd/yajl"&gt;Yet Another JSON Library&lt;/a&gt; I was able to use this and its Python bindings &lt;a href="http://pykler.github.io/yajl-py/"&gt;yajl-py&lt;/a&gt; to great effect.&lt;/p&gt;
+&lt;p&gt;For those who are familiar with the Event driven programming paradigm, you might want to skip the below explanation and jump directly to the code - &lt;/p&gt;
+&lt;p&gt;A JSON tree contains the following objects - &lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;{ - Start Map&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;} - End Map&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;[ - Start Array&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;] - End Array&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;keys&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;allowable Values - Null, Integer, Double &amp;amp; String&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;YAJL contains a core event loop that iterates over the given JSON file. It generates events on hitting each of the above object types. We define custom callback routines that are hit whenever an event is generated. These routines are responsible for extracting the objects of our interest. If all that sounds Greek to you here's a more simplified explanation - &lt;/p&gt;
+&lt;p&gt;Since we are interested in finding out all the Youtube URLs in the JSON document, we define a callback routine that is fired on every string value and checks whether the string matches a regex. &lt;/p&gt;
+&lt;p&gt;The code is available in &lt;a href="https://github.com/shahkushan1/tweet_parser"&gt;this&lt;/a&gt; repository. Besides JSON parsing, YAJL is feature rich and its streaming implementation makes it useful for other things as well - JSON Reformattng, JSON Validation. It's source has detailed &lt;a href="https://github.com/pykler/yajl-py/tree/master/examples/"&gt;examples&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;I later discovered that besides writing a Python script to accomplish this task, I could have tried these options as well - &lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a href="http://stedolan.github.io/jq/"&gt;&lt;strong&gt;jq&lt;/strong&gt;&lt;/a&gt; - A Commandline JSON Parser written in C&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;grep -Po 'http[s]:\/\/www\.youtube\.com/watch\?v\=.{11}|https:\/\/youtu.be\/.{11}' sample_tweets_data.json&lt;/code&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;As a quick performance check I compared the time taken by my Python script (which used yajl) vs the &lt;em&gt;grep&lt;/em&gt; command. &lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;em&gt;grep&lt;/em&gt; - 1 minute 55 seconds&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Python - 3 minutes 1 seconds &lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;It was clear that &lt;em&gt;grep&lt;/em&gt; was the winner here in terms of speed. But I did learn a whole bunch of new tools and a practical use of the Event Driven Programming paradigm while attempting to solve this problem. What are your favorite techniques for JSON Parsing? Do you optimize for speed, code maintainability or quick solutions?&lt;/p&gt;</summary><category term="Python"></category><category term="Bash"></category></entry><entry><title>Getting your Google Analytics Data into R</title><link href="http://www.kushanshah.in/posts/2014/Oct/google-analytics-data-extraction/" rel="alternate"></link><updated>2014-10-28T00:00:00+05:30</updated><author><name>Kushan Shah</name></author><id>tag:www.kushanshah.in,2014-10-28:posts/2014/Oct/google-analytics-data-extraction/</id><summary type="html">&lt;p&gt;R is often cited to be the &lt;em&gt;lingua franca&lt;/em&gt; of analysis. While that claim might be held debatable by many folks, R certainly packs in a lot of good implementations in the form of libraries. A simple glance at the &lt;a href="http://cran.r-project.org/web/views/"&gt;CRAN Task Views&lt;/a&gt; will tell you the range of problems you can solve via R. So as a digial analyst, here is the conundrum? One that I have certainly faced&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;R is very powerful in terms of its libraries and statistical capabilities&lt;/li&gt;
+&lt;li&gt;I have extremely good Google Analytics Data&lt;/li&gt;
+&lt;li&gt;I also have business problems that my boss would want to be solved&lt;/li&gt;
+&lt;li&gt;But Google Analytics does not have a native client library for the R language! &lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Not having a client library means a lot of tedious jobs - &lt;strong&gt;Authentication&lt;/strong&gt;, &lt;strong&gt;JSON Parsing&lt;/strong&gt;, &lt;strong&gt;Error handling with the Core Reporting API&lt;/strong&gt; would have to be solved &lt;em&gt;just in order to get the data into R&lt;/em&gt;. For someone who is primarily interested in analyzing data, this low level plumbing work is best left to libraries. This is the problem that RGoogleAnalytics solves. Put simply, RGoogleAnalytics is a wrapper over the Google Analytics API
+(Side Note - It is not the only library which solves this problem. Shout out to &lt;a href="https://twitter.com/skardhamar"&gt;Bror Skardhamar&lt;/a&gt; for his excellent implementation in the form of rga package)&lt;/p&gt;
+&lt;p&gt;But why would you want to use the API to extract your data? What is wrong with just dumping csv files from the
+Google Analytics Interface?&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;The User Interface allows you to only export Standard Reports which means they contain a preset combination of dimensions and metrics. With the API, you can extract an vast combination of dimension/metric combinations. Combine this with the power of R, this opens up new and interesting avenues to explore your data.&lt;/li&gt;
+&lt;li&gt;Oh I almost forgot, you can always create Custom Reports! Yes, but these Custom Reports can contain only 4 dimensions per report. The API has a limit of 7 dimensions per query&lt;/li&gt;
+&lt;li&gt;And wait did I mention Sampling? Better I leave that for another post&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4&gt;Enough with the talk! Show me how to get my data into R&lt;/h4&gt;
+&lt;p&gt;Before we actually dive into the R script, there is a one time setup required. &lt;/p&gt;
+&lt;h3&gt;Getting the OAuth 2.0 credentials&lt;/h3&gt;
+&lt;ol&gt;
+&lt;li&gt;Head over to &lt;a href="http://console.developers.google.com"&gt;Google Developers Console&lt;/a&gt; &lt;/li&gt;
+&lt;li&gt;Create a New Project&lt;/li&gt;
+&lt;li&gt;Once created, navigate to APIs and enable the Analytics API for your project&lt;/li&gt;
+&lt;li&gt;Navigate to Credentials and create a New Client ID&lt;/li&gt;
+&lt;li&gt;The wizard will ask you to add a Product Name and set your email address&lt;/li&gt;
+&lt;li&gt;On the Next Screen, set Application Type as &lt;em&gt;Installed Application&lt;/em&gt; and Installed Application Type as &lt;em&gt;Other&lt;/em&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;It should look like the screen shown here &lt;/p&gt;
+&lt;p&gt;&lt;img alt="Application Type Selection Dialong" src="/images/credentials.png" /&gt;&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Your OAuth 2.0 credentials are now created. Copy the Client ID and the Client Secret to your R Script &lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Note that the OAuth Credentials are unique to your account and best practices dictate that they not be shared with others or exposed in public scripts&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;require&lt;span class="o"&gt;(&lt;/span&gt;RGoogleAnalytics&lt;span class="o"&gt;)&lt;/span&gt;
+
+&lt;span class="c"&gt;# Authorize the Google Analytics account&lt;/span&gt;
+&lt;span class="c"&gt;# This need not be executed in every session once the token object is created &lt;/span&gt;
+&lt;span class="c"&gt;# and saved&lt;/span&gt;
+client.id &amp;lt;- &lt;span class="s2"&gt;&amp;quot;xxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com&amp;quot;&lt;/span&gt;
+client.secret &amp;lt;- &lt;span class="s2"&gt;&amp;quot;xxxxxxxxxxxxxxxd_TknUI&amp;quot;&lt;/span&gt;
+token &amp;lt;- Auth&lt;span class="o"&gt;(&lt;/span&gt;client.id,client.secret&lt;span class="o"&gt;)&lt;/span&gt;
+
+&lt;span class="c"&gt;# Save the token object for future sessions&lt;/span&gt;
+save&lt;span class="o"&gt;(&lt;/span&gt;token,file&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;./token_file&amp;quot;&lt;/span&gt;&lt;span class="o"&gt;)&lt;/span&gt;
+
+&lt;span class="c"&gt;# In future sessions it can be loaded via &lt;/span&gt;
+load&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;./token_file&amp;quot;&lt;/span&gt;&lt;span class="o"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;&lt;em&gt;What did we just do? What the heck is OAuth anyway?&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Think of OAuth this way - We will be using R to extract data from a particular Google Analytics Account&lt;/p&gt;
+&lt;p&gt;We will be using R to extract data from Google's Servers via the Google Analytics API. Each request to the API has to be authenticated via an Access Token. Your OAuth Credentials &lt;strong&gt;(Client ID + Client Secret)&lt;/strong&gt; are used to retrieve this Access Token. Access Tokens have a lifetime of 60 minutes after which they need to be
+regenerated. But we will get to that.&lt;/p&gt;
+&lt;p&gt;The next step is to get the Profile ID/View ID of the Google Analytics profile for which the data extraction is to be carried out. It can be found within the Admin Panel of the Google Analytics UI. This profile ID maps to the &lt;em&gt;table.id&lt;/em&gt; argument below. The rest of the query parameters are pretty much standard. Having said that, keep the following points handy&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Dimensions and Metrics Names are a bit different from the ones you see normally in the UI. The complete list of valid names can be found at &lt;a href="https://developers.google.com/analytics/devguides/reporting/core/dimsmets"&gt;this&lt;/a&gt; link&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Dimensions and Metric names use (Camel Case)[http://en.wikipedia.org/wiki/CamelCase] e.g. ga:sourceMedium&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;A better workaround to remembering these minute things is to test your queries using the &lt;a href="http://ga-dev-tools.appspot.com/explorer/"&gt;Query Feed Explorer&lt;/a&gt;. Once your query runs successfully, you can quickly copy the parameters to your R Script saving you from a lot of legwork. &lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Here is the remainder of the script which gets you the requested data into a dataframe.&lt;/p&gt;
+&lt;h3&gt;Extraction&lt;/h3&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;# Build a list of all the Query Parameters&lt;/span&gt;
+
+&lt;span class="c"&gt;# Get the Sessions &amp;amp; Transactions for each Source/Medium sorted in &lt;/span&gt;
+&lt;span class="c"&gt;# descending order by the Transactions&lt;/span&gt;
+
+query.list &amp;lt;- Init&lt;span class="o"&gt;(&lt;/span&gt;start.date &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;2014-08-01&amp;quot;&lt;/span&gt;,
+                   end.date &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;2014-09-01&amp;quot;&lt;/span&gt;,
+                   &lt;span class="nv"&gt;dimensions&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;ga:sourceMedium&amp;quot;&lt;/span&gt;,
+                   &lt;span class="nv"&gt;metrics&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;ga:sessions,ga:transactions&amp;quot;&lt;/span&gt;,
+                   max.results &lt;span class="o"&gt;=&lt;/span&gt; 10000,
+                   &lt;span class="nv"&gt;sort&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;-ga:transactions&amp;quot;&lt;/span&gt;,
+                   table.id &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;ga:123456&amp;quot;&lt;/span&gt;&lt;span class="o"&gt;)&lt;/span&gt;
+
+&lt;span class="c"&gt;# Create the Query Builder object so that the query parameters are validated&lt;/span&gt;
+ga.query &amp;lt;- QueryBuilder&lt;span class="o"&gt;(&lt;/span&gt;query.list&lt;span class="o"&gt;)&lt;/span&gt;
+
+&lt;span class="c"&gt;# Extract the data and store it in a data-frame&lt;/span&gt;
+ga.data &amp;lt;- GetReportData&lt;span class="o"&gt;(&lt;/span&gt;ga.query, token&lt;span class="o"&gt;)&lt;/span&gt;
+
+&lt;span class="c"&gt;# Sanity Check&lt;/span&gt;
+summary&lt;span class="o"&gt;(&lt;/span&gt;ga.data&lt;span class="o"&gt;)&lt;/span&gt;
+dim&lt;span class="o"&gt;(&lt;/span&gt;ga.data&lt;span class="o"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Coming back to the point about Access Tokens, since they expire after 60 minutes. How do we ensure whether the current Access Token is valid or it needs to be regenerated? This functionality is wrapped within &lt;em&gt;ValidateToken()&lt;/em&gt; It validates the token and regenerates a fresh version if it has expired. Here's how to use it in practice&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;ValidateToken&lt;span class="o"&gt;(&lt;/span&gt;token&lt;span class="o"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;In case if you want the entire script, it can be found &lt;a href="https://gist.github.com/shahkushan1/9c61b9f7c46308d13f6e"&gt;here&lt;/a&gt;. In upcoming posts, we will see how to work around Sampling and also discuss some use-cases by marrying the power of Google Analytics and R&lt;/p&gt;</summary><category term="R"></category></entry></feed>
